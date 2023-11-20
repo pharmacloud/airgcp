@@ -12,9 +12,9 @@ import (
 )
 
 type Config struct {
-	Param  map[string]string `toml:"param" json:"param,omitempty"`
-	Env    map[string]string `toml:"env" json:"env,omitempty"`
-	Secret map[string]string `toml:"secret" json:"secret,omitempty"`
+	Param     map[string]string `toml:"param" json:"param,omitempty"`
+	Env       map[string]string `toml:"env" json:"env,omitempty"`
+	GcpSecret map[string]string `toml:"gcp_secret" json:"gcp_secret,omitempty"`
 }
 
 var defaultEnvfile = ".air-env.toml"
@@ -79,7 +79,7 @@ func readSecret(ctx context.Context, cfg *Config) (map[string]string, error) {
 	defer client.Close()
 
 	result := map[string]string{}
-	for k, v := range cfg.Secret {
+	for k, v := range cfg.GcpSecret {
 		req := &secretmanagerpb.AccessSecretVersionRequest{
 			Name: replaceParam(v, cfg.Param),
 		}
