@@ -13,7 +13,7 @@ func main() {
 	log.Printf("MAPKEY: %s", os.Getenv("MAPKEY"))
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(req http.ResponseWriter, res *http.Request) {
-		log.Printf("!!!!3")
+		log.Printf("!!!!")
 	})
 	http.ListenAndServe(":18080", mux)
 }
