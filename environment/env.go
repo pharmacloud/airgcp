@@ -2,6 +2,7 @@ package environment
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 
@@ -11,9 +12,9 @@ import (
 )
 
 type Config struct {
-	ProjectId string            `toml:"project_id" json:"project_id,omitempty"`
-	Env       map[string]string `toml:"env" json:"env,omitempty"`
-	Secret    map[string]string `toml:"secret" json:"secret,omitempty"`
+	Param  map[string]string `toml:"param" json:"param,omitempty"`
+	Env    map[string]string `toml:"env" json:"env,omitempty"`
+	Secret map[string]string `toml:"secret" json:"secret,omitempty"`
 }
 
 var defaultEnvfile = ".air-env.toml"
@@ -28,10 +29,6 @@ func InitEnv(ctx context.Context, path string) error {
 	if err != nil {
 		return nil
 	}
-	// ProjectIdが指定していない場合は何もしない
-	if cfg.ProjectId == "" {
-		return nil
-	}
 
 	// 環境変数の読み込み
 	env := readEnv(cfg)
@@ -41,10 +38,6 @@ func InitEnv(ctx context.Context, path string) error {
 		return err
 	}
 
-	// ProjectIdを既定の環境変数として設定
-	if err := os.Setenv("GOOGLE_CLOUD_PROJECT", cfg.ProjectId); err != nil {
-		return err
-	}
 	// 環境変数の設定
 	if err := setEnv(env); err != nil {
 		return err
@@ -73,7 +66,7 @@ func readConfig(path string) (*Config, error) {
 func readEnv(cfg *Config) map[string]string {
 	result := map[string]string{}
 	for k, v := range cfg.Env {
-		result[k] = replactProjectId(v, cfg.ProjectId)
+		result[k] = replaceParam(v, cfg.Param)
 	}
 	return result
 }
@@ -88,7 +81,7 @@ func readSecret(ctx context.Context, cfg *Config) (map[string]string, error) {
 	result := map[string]string{}
 	for k, v := range cfg.Secret {
 		req := &secretmanagerpb.AccessSecretVersionRequest{
-			Name: replactProjectId(v, cfg.ProjectId),
+			Name: replaceParam(v, cfg.Param),
 		}
 		resp, err := client.AccessSecretVersion(ctx, req)
 		if err != nil {
@@ -108,6 +101,9 @@ func setEnv(env map[string]string) error {
 	return nil
 }
 
-func replactProjectId(s, pid string) string {
-	return strings.Replace(s, "{project_id}", pid, -1)
+func replaceParam(s string, param map[string]string) string {
+	for k, v := range param {
+		s = strings.Replace(s, fmt.Sprintf("{%s}", k), v, -1)
+	}
+	return s
 }
